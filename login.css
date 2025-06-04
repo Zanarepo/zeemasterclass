@@ -1,0 +1,135 @@
+/* Make header fixed at top */
+header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background-color: white;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  height: 60px;
+  z-index: 1000;
+}
+
+/* Header title */
+header h1 {
+  font-weight: 700;
+  color: #2575fc;
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+/* Nav container */
+header nav {
+  display: flex;
+  gap: 15px;
+  margin-left: auto; /* push nav to right */
+}
+
+/* Nav buttons */
+header nav button {
+  background-color: transparent;
+  border: 2px solid #2575fc;
+  color: #2575fc;
+  padding: 8px 18px;
+  font-weight: 600;
+  font-size: 1rem;
+  border-radius: 30px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  user-select: none;
+}
+
+header nav button:hover,
+header nav button:focus {
+  background-color: #2575fc;
+  color: white;
+  outline: none;
+}
+
+/* Body styles: add padding top to not hide content under fixed header */
+body {
+  font-family: Arial, sans-serif;
+  background-color: #eaeaea;
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-top: 60px; /* height of header */
+  box-sizing: border-box;
+}
+
+/* Login container stays centered */
+.login-container {
+  background-color: #fff;
+  padding: 2rem;
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 400px;
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: #333;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+}
+
+input[type="email"],
+input[type="password"] {
+  padding: 12px;
+  margin-bottom: 15px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+}
+
+button[type="submit"] {
+  padding: 12px;
+  background-color: #007bff;
+  color: white;
+  font-size: 16px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+button[type="submit"]:hover {
+  background-color: #0056b3;
+}
+
+.message {
+  text-align: center;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+.success {
+  color: green;
+}
+
+.error {
+  color: red;
+}
+
+/* Responsive nav: stack on small */
+@media (max-width: 480px) {
+  header nav {
+    flex-direction: column;
+    gap: 10px;
+    margin-left: 0;
+    margin-top: 10px;
+  }
+  header nav button {
+    width: 100%;
+  }
+}
