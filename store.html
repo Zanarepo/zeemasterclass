@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="store.css" />
+  <title>Zee Store</title>
+</head>
+<body>
+  <header>
+    <button class="back-btn" onclick="location.href='profile.html'" aria-label="Back to profile">←</button>
+    <h1>Zee Store</h1>
+  </header>
+
+  <main class="container">
+    <section class="product-grid" id="productGrid"></section>
+
+    <aside class="cart" id="cart">
+      <h2>Your Cart</h2>
+      <ul class="cart-items" id="cartItems"></ul>
+      <p class="total">Total: $<span id="totalPrice">0.00</span></p>
+      <button id="checkoutBtn" class="btn btn-primary">Pay Now</button>
+    </aside>
+  </main>
+
+  <script type="module">
+    import { supabase } from './supabase-client.js';
+
+    const userId = localStorage.getItem('user_id');
+    if (!userId) {
+      alert('Please login first.');
+      window.location.href = 'login.html';
+    }
+
+    const products = [
+      { id: 1, name: 'Wireless Headphones', price: 59.99, image: '/images/image_fx_ (8).jpg' },
+     { id: 1, name: 'Wireless Headphones', price: 59.99, image: '/images/image_fx_ (8).jpg' },
+     { id: 1, name: 'Wireless Headphones', price: 59.99, image: '/images/image_fx_ (8).jpg' },
+        { id: 2, name: 'Smartphone', price: 299.99, image: '/images/image_fx_ (8).jpg' },
+        { id: 3, name: 'Laptop', price: 899.99, image: '/images/image_fx_ (8).jpg' },
+        { id: 4, name: 'Smartwatch', price: 199.99, image: '/images/image_fx_ (8).jpg' },
+        { id: 5, name: 'Bluetooth Speaker', price: 49.99, image: '/images/image_fx_ (8).jpg' },
+        { id: 6, name: 'Gaming Mouse', price: 39.99, image: '/images/image_fx_ (8).jpg' },
+        { id: 7, name: 'Mechanical Keyboard', price: 89.99, image: '/images/image_fx_ (8).jpg' },
+        { id: 8, name: '4K Monitor', price: 299.99, image: '/images/image_fx_ (8).jpg' }
+    ];
+
+    const cart = {};
+    const productGrid = document.getElementById('productGrid');
+    const cartItems = document.getElementById('cartItems');
+    const totalPrice = document.getElementById('totalPrice');
+    
+
+    function updateCartDisplay() {
+      // Use a document fragment to prevent flickering
+      const fragment = document.createDocumentFragment();
+      let total = 0;
+
+      Object.values(cart).forEach(item => {
+        total += item.price * item.qty;
+        const li = document.createElement('li');
+        li.className = 'cart-item';
+        li.innerHTML = `
+          ${item.name} - $${item.price.toFixed(2)} × ${item.qty}
+          <button onclick="removeFromCart(${item.id})" aria-label="Remove ${item.name} from cart">🗑 Remove</button>
+        `;
+        fragment.appendChild(li);
+      });
+
+      // Clear and append in one go to avoid flickering
+      cartItems.innerHTML = '';
+      cartItems.appendChild(fragment);
+      totalPrice.textContent = total.toFixed(2);
+    }
+
+    window.removeFromCart = function(id) {
+      delete cart[id];
+      updateCartDisplay();
+    };
+
+    function createProductCard(product) {
+      const card = document.createElement('div');
+      card.className = 'product-card';
+      card.innerHTML = `
+        <img src="${product.image}" alt="${product.name}" onerror="this.src='/images/fallback.jpg'" />
+        <div class="product-card-content">
+          <h4>${product.name}</h4>
+          <p>$${product.price.toFixed(2)}</p>
+          <div class="qty-control">
+            <button class="decrease" aria-label="Decrease quantity">−</button>
+            <input type="number" value="1" min="1" class="qty" aria-label="Quantity for ${product.name}" />
+            <button class="increase" aria-label="Increase quantity">+</button>
+          </div>
+          <button class="btn btn-primary add-to-cart">Add to Cart</button>
+        </div>
+      `;
+
+      const qtyInput = card.querySelector('.qty');
+      card.querySelector('.increase').onclick = () => {
+        qtyInput.value = +qtyInput.value + 1;
+      };
+      card.querySelector('.decrease').onclick = () => {
+        if (+qtyInput.value > 1) qtyInput.value = +qtyInput.value - 1;
+      };
+
+      card.querySelector('.add-to-cart').onclick = () => {
+        const qty = parseInt(qtyInput.value);
+        if (cart[product.id]) {
+          cart[product.id].qty += qty;
+        } else {
+          cart[product.id] = { ...product, qty };
+        }
+        updateCartDisplay();
+      };
+
+      return card;
+    }
+
+    // Render products immediately using a fragment to avoid flickering
+    const fragment = document.createDocumentFragment();
+    products.forEach(p => fragment.appendChild(createProductCard(p)));
+    productGrid.appendChild(fragment);
+
+    document.getElementById('checkoutBtn').addEventListener('click', async () => {
+      if (!Object.keys(cart).length) return alert('Your cart is empty.');
+
+      const purchases = Object.values(cart).map(item => ({
+        user_id: userId,
+        product_name: item.name,
+        price: item.price,
+        quantity: item.qty
+      }));
+
+      const { error } = await supabase.from('purchases').insert(purchases);
+      if (error) return alert('Checkout failed: ' + error.message);
+
+      alert('Purchase successful!');
+      for (const id in cart) delete cart[id];
+      updateCartDisplay();
+    });
+  </script>
+</body>
+</html>
