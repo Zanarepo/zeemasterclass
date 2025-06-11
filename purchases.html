@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="purchases.css" />
+  <title>Purchase Management</title>
+</head>
+<body>
+  <header>
+    <h1>Manage Purchases</h1>
+    <button onclick="location.href='profile.html'" class="btn">Back to Profile</button>
+  </header>
+
+  <main class="container">
+    <!-- Add New Purchase Form -->
+    <section class="form-section">
+      <h2>Add New Purchase</h2>
+      <input type="text" id="productInput" placeholder="Product Name" required />
+      <input type="number" id="priceInput" placeholder="Price" min="0" step="0.01" required />
+      <input type="number" id="qtyInput" placeholder="Quantity" min="1" value="1" required />
+      <button class="btn" id="addPurchaseBtn">Add Purchase</button>
+    </section>
+
+    <!-- Display Purchases -->
+    <section id="purchasesContainer" class="purchases-grid"></section>
+  </main>
+
+  <script type="module">
+    import { supabase } from './supabase-client.js';
+
+    const userId = localStorage.getItem('user_id');
+    if (!userId) {
+      alert("Please login first.");
+      window.location.href = 'login.html';
+    }
+
+    const productInput = document.getElementById("productInput");
+    const priceInput = document.getElementById("priceInput");
+    const qtyInput = document.getElementById("qtyInput");
+    const purchasesContainer = document.getElementById("purchasesContainer");
+    const addBtn = document.getElementById("addPurchaseBtn");
+
+    addBtn.onclick = async () => {
+      const product = productInput.value.trim();
+      const price = parseFloat(priceInput.value);
+      const qty = parseInt(qtyInput.value);
+
+      if (!product || isNaN(price) || isNaN(qty)) {
+        alert("Please fill out all fields correctly.");
+        return;
+      }
+
+      const { error } = await supabase.from("purchases").insert({
+        user_id: userId,
+        product_name: product,
+        price: price,
+        quantity: qty
+      });
+
+      if (error) {
+        alert("Error adding purchase: " + error.message);
+      } else {
+        productInput.value = "";
+        priceInput.value = "";
+        qtyInput.value = "1";
+        fetchPurchases();
+      }
+    };
+
+    async function fetchPurchases() {
+      const { data, error } = await supabase
+        .from("purchases")
+        .select("*")
+        .eq("user_id", userId)
+        .order("purchased_date", { ascending: false });
+
+      if (error) {
+        purchasesContainer.innerHTML = `<p>Error: ${error.message}</p>`;
+        return;
+      }
+
+      purchasesContainer.innerHTML = "";
+      data.forEach(renderPurchaseCard);
+    }
+
+    function renderPurchaseCard(purchase) {
+      const card = document.createElement("div");
+      card.className = "purchase-card";
+      card.innerHTML = `
+        <label>Product:</label>
+        <input type="text" value="${purchase.product_name}" class="product-input" />
+        <label>Quantity:</label>
+        <input type="number" value="${purchase.quantity}" min="1" class="qty-input" />
+        <p>Price: $${purchase.price.toFixed(2)}</p>
+        <p><small>Purchased at: ${new Date(purchase.purchased_date).toLocaleString()}</small></p>
+        <div class="actions">
+          <button class="btn update">Update</button>
+          <button class="btn delete">Delete</button>
+        </div>
+      `;
+
+      const productField = card.querySelector(".product-input");
+      const qtyField = card.querySelector(".qty-input");
+
+      card.querySelector(".update").onclick = async () => {
+        const updatedName = productField.value.trim();
+        const updatedQty = parseInt(qtyField.value);
+
+        if (!updatedName || isNaN(updatedQty) || updatedQty < 1) {
+          alert("Please enter valid values.");
+          return;
+        }
+
+        const { error } = await supabase.from("purchases").update({
+          product_name: updatedName,
+          quantity: updatedQty
+        }).eq("id", purchase.id);
+
+        if (error) {
+          alert("Update failed: " + error.message);
+        } else {
+          alert("Updated successfully!");
+          fetchPurchases();
+        }
+      };
+
+      card.querySelector(".delete").onclick = async () => {
+        if (confirm("Are you sure you want to delete this purchase?")) {
+          const { error } = await supabase.from("purchases").delete().eq("id", purchase.id);
+          if (error) {
+            alert("Delete failed: " + error.message);
+          } else {
+            fetchPurchases();
+          }
+        }
+      };
+
+      purchasesContainer.appendChild(card);
+    }
+
+    fetchPurchases();
+  </script>
+</body>
+</html>
